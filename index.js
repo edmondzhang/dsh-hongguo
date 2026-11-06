@@ -736,15 +736,46 @@ export function apply(ctx, config = {}) {
       })
     }
 
-    // Live upstream search: the client's search box calls this with a query;
-    // the pre-fetched feed stays the offline fallback.
+    // Real search on the service, not a filter over the cached list.
+    // Restored verbatim from upstream (cd49dd9, carried through 043c675):
+    // anonymous-device reset retry, row dedup and poster backfill. The
+    // client wiring (debounced /search calls) comes from our patch.
     if (path === '/search') {
+      const keyword = (url.searchParams.get('q') ?? '').trim().slice(0, 40)
+      if (!keyword) return send(400, { ok: false, error: { message: 'empty query' } })
       return json(async () => {
-        const q = (url.searchParams.get('q') ?? '').trim()
-        if (!q) return { items: [] }
         const sdk = await client()
-        const page = await sdk.search(q, {})
-        return { items: (page?.items ?? []).map(toRow).filter((row) => row?.id) }
+        let page
+        try {
+          page = await sdk.search(keyword, {})
+        } catch (error) {
+          if (error?.code !== 'ANONYMOUS_LIMITED') throw error
+          // The anonymous device ran out; a fresh one answers the same query.
+          await sdk.resetDevice()
+          page = await sdk.search(keyword, {})
+        }
+        const seen = new Map()
+        for (const item of page?.items ?? []) mergeRows(seen, item)
+        const rows = [...seen.values()]
+        // Search rows carry no poster; the cached list or the series detail does.
+        const known = new Map(games.map((row) => [row.id, row.cover]))
+        await Promise.all(
+          rows.map(async (row) => {
+            if (row.cover) return
+            row.cover = known.get(row.id) ?? searchCovers.get(row.id)
+            if (row.cover) return
+            try {
+              const detail = await sdk.getSeries(row.id)
+              if (detail?.cover_url) {
+                row.cover = detail.cover_url
+                searchCovers.set(row.id, detail.cover_url)
+              }
+            } catch {
+              // A drama without a poster still shows, with the placeholder.
+            }
+          }),
+        )
+        return { items: rows }
       })
     }
 
