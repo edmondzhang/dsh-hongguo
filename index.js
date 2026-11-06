@@ -74,6 +74,22 @@ const STREAM_PREFERENCE = ['hls', 'dash', 'file']
 /** Convert one image with macOS `sips` (HEIC is what the CDN publishes). */
 const sips = promisify(execFile).bind(null, 'sips')
 
+/**
+ * The CDN publishes HEIC posters, which Chromium cannot decode. macOS ships
+ * `sips`; everywhere else the ffmpeg the player already requires can decode
+ * HEIC, because libavcodec reads the HEIF still as a one-frame HEVC stream.
+ */
+function coverConverter(runFfmpeg) {
+  if (process.platform === 'darwin') {
+    return async (rawPath, outPath) => {
+      await sips(['-s', 'format', 'jpeg', '-s', 'formatOptions', '70', '--resampleWidth', '240', rawPath, '--out', outPath])
+    }
+  }
+  return async (rawPath, outPath) => {
+    await runFfmpeg(['-v', 'error', '-y', '-i', rawPath, '-frames:v', '1', '-vf', 'scale=240:-2', '-q:v', '6', '-update', '1', outPath], { timeout: 30_000 })
+  }
+}
+
 /** A profile store on one JSON file, 0600 like the SDK's own file store. */
 function fileProfileStore(path) {
   return {
@@ -126,6 +142,8 @@ export function apply(ctx, config = {}) {
   let clientPromise
   let games = []
   let gamesAt = 0
+  /** Posters looked up for search results, by series id. */
+  const searchCovers = new Map()
 
   const logger = ctx.logger ?? { info() {}, warn() {}, error() {} }
   const VENDOR_DIR = join(dirname(fileURLToPath(import.meta.url)), 'vendor')
@@ -184,8 +202,18 @@ export function apply(ctx, config = {}) {
   const mediaKeys = new Map()
   const mediaJobs = new Map()
   const MEDIA_KEEP = 40
-  const ffmpegBin = ['/opt/homebrew/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg'].find((path) => existsSync(path)) ?? 'ffmpeg'
+  const ffmpegBin =
+    [
+      '/opt/homebrew/bin/ffmpeg',
+      '/usr/local/bin/ffmpeg',
+      '/usr/bin/ffmpeg',
+      // Windows: WinGet's shim directory, then a plain Program Files install;
+      // anything else (scoop, choco) is expected on PATH, which is the fallback.
+      process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Microsoft', 'WinGet', 'Links', 'ffmpeg.exe') : '',
+      process.env.ProgramFiles ? join(process.env.ProgramFiles, 'ffmpeg', 'bin', 'ffmpeg.exe') : '',
+    ].find((path) => path && existsSync(path)) ?? 'ffmpeg'
   const runFfmpeg = promisify(execFile).bind(null, ffmpegBin)
+  const convertCover = coverConverter(runFfmpeg)
 
   function safeId(id) {
     return /^[0-9A-Za-z_-]{1,64}$/.test(String(id ?? '')) ? String(id) : undefined
@@ -414,14 +442,14 @@ export function apply(ctx, config = {}) {
     }
     const key = createHash('sha1').update(target.href).digest('hex')
     const cached = join(coverDir, `${key}.jpg`)
-    const sendJpeg = (bytes) => {
+    const sendImage = (bytes, mime = 'image/jpeg') => {
       response.statusCode = 200
-      response.setHeader('content-type', 'image/jpeg')
+      response.setHeader('content-type', mime)
       response.setHeader('cache-control', 'public, max-age=86400')
       response.end(request.method === 'HEAD' ? undefined : bytes)
     }
     try {
-      return sendJpeg(await readFile(cached))
+      return sendImage(await readFile(cached))
     } catch {
       // Not converted yet.
     }
@@ -438,16 +466,16 @@ export function apply(ctx, config = {}) {
     }
     const type = upstream.headers.get('content-type') ?? ''
     const bytes = Buffer.from(await upstream.arrayBuffer())
-    if (/^image\/(jpeg|png|webp|gif|avif)/.test(type)) return sendJpeg(bytes)
-    // HEIC and everything else local ImageIO understands goes through sips.
+    if (/^image\/(jpeg|png|webp|gif|avif)/.test(type)) return sendImage(bytes, type)
+    // HEIC goes through the platform converter (sips on macOS, ffmpeg elsewhere).
     const rawPath = join(coverDir, `${key}.heic`)
     const outPath = `${key}.jpg`
     try {
       await mkdir(coverDir, { recursive: true, mode: 0o700 })
       await writeFile(rawPath, bytes)
-      await sips(['-s', 'format', 'jpeg', '-s', 'formatOptions', '70', '--resampleWidth', '240', rawPath, '--out', join(coverDir, outPath)])
+      await convertCover(rawPath, join(coverDir, outPath))
       const converted = await readFile(cached)
-      return sendJpeg(converted)
+      return sendImage(converted)
     } catch (error) {
       logger.warn?.(`[hongguo] cover conversion failed: ${error?.message ?? error}`)
       response.statusCode = 415
