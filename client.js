@@ -1111,12 +1111,21 @@ window.__ModuleLoader__.load({
                 onPause: () => setPlaying(false),
                 onTimeUpdate: (event) => {
                   const video = event.currentTarget
+                  // While a seek is in flight some engines still emit
+                  // timeupdate with the pre-seek position; never let it
+                  // yank the thumb away from where the user dragged.
+                  if (video.seeking) return
                   setProgress({ time: video.currentTime, duration: video.duration })
                   // Persist about once per second, not on every tick.
                   if (current && Math.abs(video.currentTime - lastSavedRef.current) >= 1) {
                     lastSavedRef.current = video.currentTime
                     saveProgress(series, current, video.currentTime)
                   }
+                },
+                onSeeked: (event) => {
+                  // Align the readout with the seek the moment it lands.
+                  const video = event.currentTarget
+                  setProgress((previous) => ({ time: video.currentTime, duration: previous.duration || video.duration }))
                 },
                 onLoadedMetadata: (event) => {
                   const video = event.currentTarget
