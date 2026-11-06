@@ -49,6 +49,7 @@ window.__ModuleLoader__.load({
       'player.remuxing': '正在把这一集转换成可直接播放的格式…',
       'player.finished': '任务完成了，先停一下。看完结果再看剧。',
       'player.resume': '继续播放',
+      'player.resumeOf': '继续播放 第 {n} 集',
       'player.history': '继续观看',
       'player.historyLine': '第 {n} 集 · {t}',
       'player.historyNew': '还没开始看',
@@ -62,8 +63,6 @@ window.__ModuleLoader__.load({
       'player.recommend': '为你推荐',
       'player.historyOpen': '观看历史',
       'player.search': '搜索短剧',
-      'player.searching': '搜索中…',
-      'player.noResults': '没有找到“{q}”相关的短剧',
       'player.historyEmpty': '还没有观看记录',
       'player.episodeOf': '第 {n} 集 · 共 {total} 集',
       'player.chooseEpisode': '选集',
@@ -74,7 +73,6 @@ window.__ModuleLoader__.load({
       'player.watchNow': '现在就看',
       'player.drm': '这一集是加密流，且未能在本机解密（需要安装 ffmpeg）',
       'player.error': '出错了：{message}',
-      'player.noFree': '这部剧没有可免费播放的集',
     }
     const en = {
       'tab.title': 'Drama Break',
@@ -107,6 +105,7 @@ window.__ModuleLoader__.load({
       'player.remuxing': 'Preparing this episode for playback…',
       'player.finished': 'Task finished — paused for you. Resume when ready.',
       'player.resume': 'Resume',
+      'player.resumeOf': 'Resume episode {n}',
       'player.history': 'Continue watching',
       'player.historyLine': 'Episode {n} · {t}',
       'player.historyNew': 'Not started',
@@ -120,8 +119,6 @@ window.__ModuleLoader__.load({
       'player.recommend': 'Recommended for you',
       'player.historyOpen': 'History',
       'player.search': 'Search dramas',
-      'player.searching': 'Searching…',
-      'player.noResults': 'No dramas found for “{q}”',
       'player.historyEmpty': 'Nothing watched yet',
       'player.episodeOf': 'Episode {n} of {total}',
       'player.chooseEpisode': 'Episodes',
@@ -129,7 +126,6 @@ window.__ModuleLoader__.load({
       'player.fullscreen': 'Fullscreen',
       'player.play': 'Play',
       'player.pause': 'Pause',
-      'player.noFree': 'No free episodes in this drama',
       'player.watchNow': 'Watch now',
       'player.drm': 'This episode is encrypted and could not be decrypted locally (ffmpeg is required)',
       'player.error': 'Something went wrong: {message}',
@@ -153,7 +149,7 @@ window.__ModuleLoader__.load({
 @container (max-width:640px){.hg-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
 @container (max-width:460px){.hg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
 @container (max-width:300px){.hg-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
-.hg-card{appearance:none;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font:inherit;display:flex;flex-direction:column;gap:5px;min-width:0;}
+.hg-card{appearance:none;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font:inherit;display:flex;flex-direction:column;gap:5px;min-width:0;width:100%;}
 .hg-card:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;border-radius:8px;}
 .hg-cover{aspect-ratio:3/4;width:100%;border-radius:8px;overflow:hidden;background:var(--dsw-alias-bg-layer-2);position:relative;}
 .hg-cover img,.hg-feature-cover img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -180,7 +176,7 @@ window.__ModuleLoader__.load({
 .hg-feature-head{font-size:11px;color:var(--dsw-alias-label-secondary);margin:0 0 6px;}
 .hg-feature-card{display:flex;gap:12px;width:100%;text-align:left;appearance:none;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);padding:10px;color:inherit;font:inherit;cursor:pointer;}
 .hg-feature-card:hover{border-color:var(--dsw-alias-brand-primary);}
-.hg-feature-cover{position:relative;flex:none;width:84px;aspect-ratio:3/4;border-radius:8px;overflow:hidden;background:var(--dsw-alias-bg-layer-2);display:flex;align-items:center;justify-content:center;}
+.hg-feature-cover{flex:none;width:84px;aspect-ratio:3/4;border-radius:8px;overflow:hidden;background:var(--dsw-alias-bg-layer-2);display:flex;align-items:center;justify-content:center;}
 .hg-feature-cover img{width:100%;height:100%;object-fit:cover;}
 .hg-feature-copy{display:flex;flex-direction:column;gap:6px;min-width:0;}
 .hg-feature-copy b{font-size:14px;line-height:1.35;}
@@ -188,12 +184,6 @@ window.__ModuleLoader__.load({
 .hg-feature-play{align-self:flex-start;font-size:11px;padding:5px 10px;border-radius:999px;line-height:1.2;}
 .hg-history{margin-bottom:12px;}
 .hg-history-head{font-size:11px;color:var(--dsw-alias-label-secondary);margin:0 0 6px;}
-.hg-history-row{display:flex;align-items:center;gap:4px;}
-.hg-history-main{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px;appearance:none;border:0;background:none;color:var(--dsw-alias-label-primary);font:inherit;font-size:12px;text-align:left;padding:4px 6px;border-radius:6px;cursor:pointer;}
-.hg-history-main:hover{background:var(--dsw-alias-bg-layer-2);}
-.hg-history-title{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.hg-history-sub{color:var(--dsw-alias-label-secondary);font-size:11px;flex:none;font-variant-numeric:tabular-nums;}
-.hg-history-row .hg-dismiss{color:var(--dsw-alias-label-secondary);}
 .hg-veil .hg-note{color:rgba(255,255,255,.75);max-width:240px;}
 .hg-veil.notice{background:rgba(0,0,0,.6);font-size:13px;line-height:1.5;}
 .hg-big{font-size:30px;font-weight:600;color:#fff;}
@@ -217,8 +207,18 @@ window.__ModuleLoader__.load({
 .hg-icon-btn:hover{background:var(--dsw-alias-bg-layer-2);}
 .hg-title-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
 .hg-title-sub{font-size:11px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;}
-.hg-history{margin-bottom:12px;padding:8px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);max-height:260px;overflow:auto;}
+.hg-history{margin-bottom:12px;padding:8px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);max-height:300px;overflow:auto;}
 .hg-history-head{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--dsw-alias-label-secondary);margin:0 2px 4px 6px;}
+.hg-hgrid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:10px 6px;padding:2px;}
+@container (max-width:640px){.hg-hgrid{grid-template-columns:repeat(8,minmax(0,1fr));}}
+@container (max-width:460px){.hg-hgrid{grid-template-columns:repeat(6,minmax(0,1fr));}}
+@container (max-width:300px){.hg-hgrid{grid-template-columns:repeat(4,minmax(0,1fr));}}
+.hg-hcard{position:relative;min-width:0;}
+.hg-hname{font-size:11px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+.hg-hsub{font-size:10px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;}
+.hg-hforget{position:absolute;top:2px;right:2px;appearance:none;border:0;background:rgba(0,0,0,.55);color:#fff;width:16px;height:16px;border-radius:50%;font-size:11px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.hg-hcard:hover .hg-hforget,.hg-hforget:focus-visible{display:inline-flex;}
+@media (hover:none){.hg-hforget{display:inline-flex;}}
 .hg-dismiss{appearance:none;border:0;background:none;color:var(--dsw-alias-label-secondary);cursor:pointer;font:inherit;font-size:14px;line-height:1;padding:3px 6px;border-radius:6px;}
 .hg-dismiss:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-2);}
 .hg-feature-play{display:inline-flex;align-items:center;gap:4px;}
@@ -326,7 +326,7 @@ window.__ModuleLoader__.load({
      * gate, so the DSH shell's CSP does not need a blob: source.
      */
     const vendorLoads = new Map()
-    function loadVendor(file, globalName = 'mpegts') {
+    function loadVendor(file) {
       if (vendorLoads.has(file)) return vendorLoads.get(file)
       const loading = new Promise((resolve, reject) => {
         if (file.endsWith('.mjs')) {
@@ -336,25 +336,9 @@ window.__ModuleLoader__.load({
         }
         const script = document.createElement('script')
         script.src = `${API}/vendor/${file}`
-        // UMD bundles register with an AMD loader instead of a global when the
-        // page has one; hide it for this script so the global is always set.
-        const amd = typeof window.define === 'function' && window.define.amd ? window.define : undefined
-        if (amd) window.define = undefined
-        const restore = () => {
-          if (amd) window.define = amd
-        }
         // Classic scripts are executed whatever MIME type the shell serves.
-        script.onload = () => {
-          restore()
-          const value = window[globalName]
-          if (value) resolve(value)
-          else reject(new Error(`${file} did not define ${globalName}`))
-        }
-        script.onerror = () => {
-          restore()
-          vendorLoads.delete(file)
-          reject(new Error(`failed to load ${file}`))
-        }
+        script.onload = () => resolve(window.mpegts)
+        script.onerror = () => reject(new Error(`failed to load ${file}`))
         document.head.append(script)
       })
       vendorLoads.set(file, loading)
@@ -389,16 +373,15 @@ window.__ModuleLoader__.load({
       return feedCache.items
     }
 
-    /** Episode list for one drama; failures on a rotated device are retried once. */
+    /** Detail and episode list for one drama; failures on a rotated device are retried once. */
     async function fetchSeries(seriesId) {
-      const query = `/series?id=${encodeURIComponent(seriesId)}`
+      const load = () => callApi(`/series?id=${encodeURIComponent(seriesId)}`)
+      const shape = (body) => ({ series: body.series, episodes: (body.episodes ?? []).filter((episode) => episode.playable !== false) })
       try {
-        const body = await callApi(query)
-        return (body.episodes ?? []).filter((episode) => episode.playable !== false)
+        return shape(await load())
       } catch (error) {
         if (error.code !== 'ANONYMOUS_LIMITED') throw error
-        const body = await callApi(query)
-        return (body.episodes ?? []).filter((episode) => episode.playable !== false)
+        return shape(await load())
       }
     }
 
@@ -426,18 +409,6 @@ window.__ModuleLoader__.load({
     // slot, and a short list of recently watched dramas. They are the only
     // persisted player state; everything else is derived from the Host.
     const HISTORY_KEY = 'dsh-hongguo.watch-history.v1'
-    /** The history lives under the key the earlier multi-source build used. */
-    const STORE_KEY = `${HISTORY_KEY}.hongguo`
-    // Carry over the oldest unsuffixed key once, and drop what the removed
-    // second source left behind.
-    try {
-      const legacy = localStorage.getItem(HISTORY_KEY)
-      if (legacy && !localStorage.getItem(STORE_KEY)) localStorage.setItem(STORE_KEY, legacy)
-      localStorage.removeItem(`${HISTORY_KEY}.hg2`)
-      localStorage.removeItem('hg.source')
-    } catch {
-      // Storage unavailable: nothing to migrate.
-    }
     /** A finished episode restarts from zero instead of resuming near its end. */
     const END_MARGIN = 5
 
@@ -460,7 +431,7 @@ window.__ModuleLoader__.load({
 
     /** Read one session's progress for one drama, or undefined. */
     function progressOf(seriesId, episodeId) {
-      const history = readJson(STORE_KEY, { series: {} })
+      const history = readJson(HISTORY_KEY, { series: {} })
       const record = history.series?.[seriesId]
       if (!record || record.episodeId !== episodeId) return undefined
       return record.position
@@ -475,9 +446,9 @@ window.__ModuleLoader__.load({
       if (!series?.id) return
       const at = Number.isFinite(position) && position > 0 ? position : 0
       if (at > 0 && !episode?.id) return
-      const history = readJson(STORE_KEY, { series: {} })
+      const history = readJson(HISTORY_KEY, { series: {} })
       const records = history.series ?? {}
-      records[series.id] = { seriesId: series.id, title: series.title, episodeId: episode?.id, number: episode?.number, position: at, at: Date.now() }
+      records[series.id] = { seriesId: series.id, title: series.title, cover: series.cover ?? records[series.id]?.cover, episodeId: episode?.id, number: episode?.number, position: at, at: Date.now() }
       // Keep the list short: the most recent twelve dramas.
       const trimmed = Object.fromEntries(
         Object.values(records)
@@ -485,12 +456,12 @@ window.__ModuleLoader__.load({
           .slice(0, 12)
           .map((record) => [record.seriesId, record]),
       )
-      writeJson(STORE_KEY, { series: trimmed })
+      writeJson(HISTORY_KEY, { series: trimmed })
     }
 
     /** Recently watched dramas, newest first, straight from storage. */
     function listHistory() {
-      const stored = readJson(STORE_KEY, { series: {} })
+      const stored = readJson(HISTORY_KEY, { series: {} })
       return Object.values(stored.series ?? {}).sort((a, b) => (b.at ?? 0) - (a.at ?? 0))
     }
 
@@ -529,11 +500,10 @@ window.__ModuleLoader__.load({
      */
     function DramaPlayer({ requested, compact }) {
       const t = useTranslate()
-      /** Results of the server-side search for the current query. */
-      const [found, setFound] = React.useState({ status: 'idle', keyword: '', items: [], error: undefined })
-      const [searchTick, setSearchTick] = React.useState(0)
       const [feed, setFeed] = React.useState({ status: 'loading', items: [], error: undefined })
       const [query, setQuery] = React.useState('')
+      /** Remote search results for the current query; local filtering stays the fallback. */
+      const [search, setSearch] = React.useState({ status: 'idle', items: [] })
       const [series, setSeries] = React.useState(undefined)
       const [seriesInfo, setSeriesInfo] = React.useState({ status: 'idle', episodes: [], error: undefined })
       const [current, setCurrent] = React.useState(undefined)
@@ -569,11 +539,75 @@ window.__ModuleLoader__.load({
           .catch((error) => setFeed({ status: 'error', items: [], error }))
       }, [])
 
+      // Ask the Host's upstream search for the typed query (debounced); a
+      // failure falls back to filtering the already-fetched feed locally.
+      React.useEffect(() => {
+        const q = query.trim()
+        if (!q) {
+          setSearch({ status: 'idle', items: [] })
+          return undefined
+        }
+        let alive = true
+        const timer = setTimeout(() => {
+          setSearch({ status: 'loading', items: [] })
+          callApi(`/search?q=${encodeURIComponent(q)}`)
+            .then((body) => {
+              if (alive) setSearch({ status: 'ready', items: body.items ?? [] })
+            })
+            .catch(() => {
+              if (alive) setSearch({ status: 'error', items: [] })
+            })
+        }, 350)
+        return () => {
+          alive = false
+          clearTimeout(timer)
+        }
+      }, [query])
+
       React.useEffect(loadFeed, [loadFeed])
+
+      // History records saved before covers were persisted have no poster.
+      // Backfill from the feed when it can name one (free); anything left
+      // over comes from the series detail endpoint, once per record.
+      const coverPendingRef = React.useRef(new Set())
+      React.useEffect(() => {
+        const stored = listHistory()
+        const missing = stored.filter((row) => row && !row.cover)
+        if (missing.length === 0) return
+        let changed = false
+        const rest = []
+        for (const row of missing) {
+          const item = feed.items.find((entry) => entry && entry.id === row.seriesId)
+          if (item?.cover) {
+            row.cover = item.cover
+            changed = true
+          } else rest.push(row)
+        }
+        if (changed) {
+          writeJson(HISTORY_KEY, { series: Object.fromEntries(stored.map((row) => [row.seriesId, row])) })
+          setWatched(listHistory())
+        }
+        for (const row of rest) {
+          if (coverPendingRef.current.has(row.seriesId)) continue
+          coverPendingRef.current.add(row.seriesId)
+          fetchSeries(row.seriesId)
+            .then((detail) => {
+              const cover = detail.series?.cover_url
+              if (!cover) return
+              const fresh = listHistory()
+              const target = fresh.find((entry) => entry && entry.seriesId === row.seriesId)
+              if (!target || target.cover) return
+              target.cover = cover
+              writeJson(HISTORY_KEY, { series: Object.fromEntries(fresh.map((entry) => [entry.seriesId, entry])) })
+              setWatched(listHistory())
+            })
+            .catch(() => {})
+        }
+      }, [feed.items])
 
       // Enter one drama: load its episodes, then continue the episode the
       // history left unfinished (or start the first one).
-      const openSeries = React.useCallback((item) => {
+      const openSeries = React.useCallback((item, autoplay = true) => {
         const known = listHistory().find((row) => row.seriesId === item.id)
         saveProgress(item, { id: known?.episodeId, number: known?.number }, known ? known.position : 0)
         setWatched(listHistory())
@@ -582,15 +616,22 @@ window.__ModuleLoader__.load({
         setPlayback({ status: 'idle', data: undefined, error: undefined })
         setSeriesInfo({ status: 'loading', episodes: [], error: undefined })
         fetchSeries(item.id)
-          .then((episodes) => {
+          .then((detail) => {
+            const episodes = detail.episodes
             setSeriesInfo({ status: 'ready', episodes, error: undefined })
+            // The detail call carries the artwork; adopt it when the list
+            // entry (search results especially) had none.
+            const cover = item.cover ?? detail.series?.cover_url ?? known?.cover
+            const full = cover && cover !== item.cover ? { ...item, cover } : item
+            if (full !== item) setSeries(full)
             const record = listHistory().find((row) => row.seriesId === item.id)
             const saved = record ? episodes.find((episode) => episode.id === record.episodeId) : undefined
             const target = saved ?? episodes[0]
             if (!target) return
             const position = record ? Math.max(0, Number(record.position) || 0) : 0
-            reportActivity(item, target)
-            playEpisodeRef.current(target, position)
+            reportActivity(full, target)
+            if (autoplay) playEpisodeRef.current(target, position)
+            else setCurrent(target)
           })
           .catch((error) => setSeriesInfo({ status: 'error', episodes: [], error }))
       }, [])
@@ -630,21 +671,17 @@ window.__ModuleLoader__.load({
       /** Forget one drama's history (list row's remove control). */
       const forget = React.useCallback((seriesId) => {
         const next = Object.fromEntries(listHistory().filter((row) => row.seriesId !== seriesId).map((row) => [row.seriesId, row]))
-        writeJson(STORE_KEY, { series: next })
+        writeJson(HISTORY_KEY, { series: next })
         setWatched(listHistory())
       }, [])
 
-      /** Continue exactly where the history left off. */
+      /** Continue watching: open the drama on the recorded episode, but let
+       * the user press play instead of jumping straight into playback. */
       const continueWatching = React.useCallback(
         (row) => {
-          fetchSeries(row.seriesId)
-            .then((episodes) => {
-              const episode = episodes.find((item) => item.id === row.episodeId) ?? episodes[0]
-              if (episode) playEpisode(episode, row.episodeId === episode.id ? row.position : 0)
-            })
-            .catch(() => {})
+          openSeriesRef.current({ id: row.seriesId, title: row.title, cover: row.cover }, true)
         },
-        [playEpisode],
+        [],
       )
 
       const playEpisodeRef = React.useRef(playEpisode)
@@ -664,7 +701,10 @@ window.__ModuleLoader__.load({
       const activeSource = React.useMemo(() => {
         const data = playback.data
         if (!data?.sources?.length) return undefined
-        return data.sources.find((source) => source.definition === quality) ?? data.sources[0]
+        // No remembered quality: default to the highest definition on offer.
+        return data.sources.find((source) => source.definition === quality)
+          ?? data.sources.slice().sort((a, b) => (parseInt(b.definition, 10) || 0) - (parseInt(a.definition, 10) || 0))[0]
+          ?? data.sources[0]
       }, [playback.data, quality])
 
       // Media failures are reported by whichever player is attached.
@@ -719,7 +759,7 @@ window.__ModuleLoader__.load({
                 hasAudioTrack: true,
               }, { autoCleanupSourceBuffer: true, lazyLoad: true })
               player.attachMediaElement(video)
-              player.on(engine.Events?.ERROR ?? 'error', failOnMedia)
+              player.on(engine.Events?.ERROR ?? 'error', onMediaError)
               player.load()
             })
           : loadVendor('dash.all.min.mjs').then((dash) => {
@@ -731,9 +771,7 @@ window.__ModuleLoader__.load({
               player.on(player.constructor.events?.ERROR ?? 'error', failOnMedia)
             })
         attach.catch((error) => {
-          if (disposed) return
-          console.error('[hongguo] player failed', error)
-          failOnMedia()
+          if (!disposed) console.error('[hongguo] player failed', error)
         })
         return () => {
           disposed = true
@@ -787,6 +825,13 @@ window.__ModuleLoader__.load({
        * watched: a drama never opened starts at episode one, a drama in
        * progress picks somewhere after the last episode's place.
        */
+      // Resume the highlighted episode (history entries land here).
+      const resumeCurrent = React.useCallback(() => {
+        if (!current) return
+        const record = listHistory().find((row) => row.seriesId === series?.id)
+        playEpisode(current, Math.max(0, Number(record?.position) || 0))
+      }, [current, series, playEpisode])
+
       const pickRandom = React.useCallback(
         (episodes) => {
           const list = (episodes ?? []).filter((episode) => episode && !episode.untitled)
@@ -807,48 +852,27 @@ window.__ModuleLoader__.load({
         if (feed.items.length === 0) return undefined
         const seen = new Set(watched.map((row) => row.seriesId))
         const fresh = feed.items.filter((item) => item && !seen.has(item.id))
-        return fresh[0] ?? feed.items[0]
+        // Prefer a row that actually has artwork; search rows may not.
+        return fresh.find((item) => item.cover) ?? fresh[0] ?? feed.items.find((item) => item.cover) ?? feed.items[0]
       }, [feed.items, watched])
 
-      // Search asks the source itself; the cached list only holds a few dozen
-      // dramas. Typing waits for a pause, Enter searches at once, and a
-      // reply for an older query is dropped.
-      const keyword = query.trim()
-      React.useEffect(() => {
-        if (!keyword) {
-          setFound({ status: 'idle', keyword: '', items: [], error: undefined })
-          return undefined
-        }
-        let stale = false
-        setFound((previous) => ({ ...previous, status: 'loading', keyword }))
-        const timer = setTimeout(() => {
-          callApi(`/search?q=${encodeURIComponent(keyword)}`)
-            .then((body) => {
-              if (!stale) setFound({ status: 'ready', keyword, items: body.items ?? [], error: undefined })
-            })
-            .catch((error) => {
-              if (!stale) setFound({ status: 'error', keyword, items: [], error })
-            })
-        }, searchTick > 0 ? 0 : 400)
-        return () => {
-          stale = true
-          clearTimeout(timer)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [keyword, searchTick])
-
       const PAGE = 12
-      // The featured drama is already on screen; the grid shows the others.
-      const pool = keyword
-        ? found.items
+      // A typed query prefers live upstream results; when the Host search
+      // fails, the pre-fetched feed is filtered locally as a fallback.
+      const trimmed = query.trim()
+      const pool = trimmed
+        ? search.status === 'ready'
+          ? search.items.filter((item) => item && item.id !== recommendation?.id)
+          : search.status === 'error'
+            ? feed.items.filter((item) => String(item.title ?? '').includes(trimmed))
+            : []
         : feed.items.filter((item) => item && item.id !== recommendation?.id)
       const pageCount = Math.max(1, Math.ceil(pool.length / PAGE))
-      const shownPage = page % pageCount
+      const shownPage = query.trim() ? 0 : page % pageCount
       const visible = pool.slice(shownPage * PAGE, shownPage * PAGE + PAGE)
       /** Next twelve; after the last page, fetch a fresh list and start over. */
       const nextBatch = () => {
         if (shownPage + 1 < pageCount) setPage(shownPage + 1)
-        else if (keyword) setPage(0)
         else {
           setPage(0)
           fetchFeed(true)
@@ -917,11 +941,9 @@ window.__ModuleLoader__.load({
       let content
       if (!series) {
         let grid
-        if (keyword && found.status === 'error') grid = h(ErrorBox, { error: found.error, onRetry: () => setSearchTick((value) => value + 1) })
-        else if (keyword && (found.status === 'loading' || found.keyword !== keyword)) grid = h('div', { className: 'hg-muted' }, t('player.searching'))
-        else if (keyword && visible.length === 0) grid = h('div', { className: 'hg-empty' }, t('player.noResults').replace('{q}', keyword))
-        else if (feed.status === 'error') grid = h(ErrorBox, { error: feed.error, onRetry: loadFeed })
+        if (feed.status === 'error') grid = h(ErrorBox, { error: feed.error, onRetry: loadFeed })
         else if (feed.status === 'loading' && visible.length === 0) grid = h('div', { className: 'hg-muted' }, t('player.loading'))
+        else if (trimmed && search.status === 'loading' && visible.length === 0) grid = h('div', { className: 'hg-muted' }, t('player.loading'))
         else if (visible.length === 0) grid = h('div', { className: 'hg-empty' }, t('player.noSource'))
         else
           grid = h(
@@ -949,26 +971,31 @@ window.__ModuleLoader__.load({
               ),
               watched.length === 0
                 ? h('div', { className: 'hg-muted' }, t('player.historyEmpty'))
-                : watched.map((row) =>
-                    h(
-                      'div',
-                      { key: row.seriesId, className: 'hg-history-row' },
+                : h(
+                    'div',
+                    { className: 'hg-hgrid' },
+                    watched.map((row) =>
                       h(
-                        'button',
-                        { type: 'button', className: 'hg-history-main', onClick: () => { setShowHistory(false); continueWatching(row) } },
-                        h('span', { className: 'hg-history-title' }, row.title ?? row.seriesId),
+                        'div',
+                        { key: row.seriesId, className: 'hg-hcard' },
                         h(
-                          'span',
-                          { className: 'hg-history-sub' },
-                          row.number === undefined || row.episodeId === undefined
-                            ? t('player.historyNew')
-                            : t('player.historyLine').replace('{n}', String(row.number)).replace('{t}', formatTime(row.position)),
+                          'button',
+                          { type: 'button', className: 'hg-card', onClick: () => { setShowHistory(false); continueWatching(row) } },
+                          h('span', { className: 'hg-cover' }, h(Cover, { src: row.cover, alt: row.title ?? '' })),
+                          h('span', { className: 'hg-hname' }, row.title ?? row.seriesId),
+                          h(
+                            'span',
+                            { className: 'hg-hsub' },
+                            row.number === undefined || row.episodeId === undefined
+                              ? t('player.historyNew')
+                              : t('player.historyLine').replace('{n}', String(row.number)).replace('{t}', formatTime(row.position)),
+                          ),
                         ),
-                      ),
-                      h(
-                        'button',
-                        { type: 'button', className: 'hg-dismiss', title: t('player.forget'), 'aria-label': t('player.forget'), onClick: () => forget(row.seriesId) },
-                        '\u00d7',
+                        h(
+                          'button',
+                          { type: 'button', className: 'hg-hforget', title: t('player.forget'), 'aria-label': t('player.forget'), onClick: () => forget(row.seriesId) },
+                          '\u00d7',
+                        ),
                       ),
                     ),
                   ),
@@ -1009,10 +1036,6 @@ window.__ModuleLoader__.load({
               onChange: (event) => {
                 setQuery(event.target.value)
                 setPage(0)
-                setSearchTick(0)
-              },
-              onKeyDown: (event) => {
-                if (event.key === 'Enter' && !event.nativeEvent.isComposing) setSearchTick((value) => value + 1)
               },
               'aria-label': t('player.search'),
             }),
@@ -1042,7 +1065,14 @@ window.__ModuleLoader__.load({
                   value: progress.time || 0,
                   style: { '--hg-fill': ratio + '%' },
                   'aria-label': 'seek',
-                  onChange: (event) => seekTo(Number(event.target.value)),
+                  onChange: (event) => {
+                    const value = Number(event.target.value)
+                    seekTo(value)
+                    // The input is controlled: without moving state here React
+                    // snaps the thumb back to the last timeupdate position,
+                    // which reads as "the track jumps to the beginning".
+                    setProgress((previous) => ({ time: value, duration: previous.duration }))
+                  },
                 }),
                 h(
                   'div',
@@ -1251,12 +1281,13 @@ window.__ModuleLoader__.load({
                     { className: 'hg-idle' },
                     h(Mark, { size: 40 }),
                     h('div', { className: 'hg-idle-text' }, t('player.notPlaying')),
+                    current
+                      ? h('button', { type: 'button', className: 'hg-btn primary', onClick: resumeCurrent }, t('player.resumeOf').replace('{n}', String(current.number ?? index + 1)))
+                      : null,
                     h('button', { type: 'button', className: 'hg-idle-pick', onClick: () => pickRandom(seriesInfo.episodes) }, t('player.pickRandom')),
-                    h('button', { type: 'button', className: 'hg-btn primary', onClick: () => playEpisode(seriesInfo.episodes[0]) }, t('player.startFirst')),
+                    h('button', { type: 'button', className: current ? 'hg-btn' : 'hg-btn primary', onClick: () => playEpisode(seriesInfo.episodes[0]) }, t('player.startFirst')),
                   )
-                : seriesInfo.status === 'ready'
-                  ? h('div', { className: 'hg-empty' }, t('player.noFree'))
-                  : null,
+                : null,
           seriesInfo.status === 'error' ? h(ErrorBox, { error: seriesInfo.error, onRetry: () => series && openSeries(series) }) : null,
           series?.description && !current ? h('div', { className: 'hg-desc' }, series.description) : null,
           episodePanel,
