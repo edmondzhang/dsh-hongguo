@@ -74,22 +74,6 @@ const STREAM_PREFERENCE = ['hls', 'dash', 'file']
 /** Convert one image with macOS `sips` (HEIC is what the CDN publishes). */
 const sips = promisify(execFile).bind(null, 'sips')
 
-/**
- * The CDN publishes HEIC posters, which Chromium cannot decode. macOS ships
- * `sips`; everywhere else the ffmpeg the player already requires can decode
- * HEIC, because libavcodec reads the HEIF still as a one-frame HEVC stream.
- */
-function coverConverter(runFfmpeg) {
-  if (process.platform === 'darwin') {
-    return async (rawPath, outPath) => {
-      await sips(['-s', 'format', 'jpeg', '-s', 'formatOptions', '70', '--resampleWidth', '240', rawPath, '--out', outPath])
-    }
-  }
-  return async (rawPath, outPath) => {
-    await runFfmpeg(['-v', 'error', '-y', '-i', rawPath, '-frames:v', '1', '-vf', 'scale=240:-2', '-q:v', '6', '-update', '1', outPath], { timeout: 30_000 })
-  }
-}
-
 /** A profile store on one JSON file, 0600 like the SDK's own file store. */
 function fileProfileStore(path) {
   return {
@@ -200,18 +184,8 @@ export function apply(ctx, config = {}) {
   const mediaKeys = new Map()
   const mediaJobs = new Map()
   const MEDIA_KEEP = 40
-  const ffmpegBin =
-    [
-      '/opt/homebrew/bin/ffmpeg',
-      '/usr/local/bin/ffmpeg',
-      '/usr/bin/ffmpeg',
-      // Windows: WinGet's shim directory, then a plain Program Files install;
-      // anything else (scoop, choco) is expected on PATH, which is the fallback.
-      process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Microsoft', 'WinGet', 'Links', 'ffmpeg.exe') : '',
-      process.env.ProgramFiles ? join(process.env.ProgramFiles, 'ffmpeg', 'bin', 'ffmpeg.exe') : '',
-    ].find((path) => path && existsSync(path)) ?? 'ffmpeg'
+  const ffmpegBin = ['/opt/homebrew/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg'].find((path) => existsSync(path)) ?? 'ffmpeg'
   const runFfmpeg = promisify(execFile).bind(null, ffmpegBin)
-  const convertCover = coverConverter(runFfmpeg)
 
   function safeId(id) {
     return /^[0-9A-Za-z_-]{1,64}$/.test(String(id ?? '')) ? String(id) : undefined
@@ -377,10 +351,22 @@ export function apply(ctx, config = {}) {
     let { text, type } = await fetchText(access.absolute)
     let base = access.absolute
     if (/^#EXTM3U/.test(text.trimStart()) && /#EXT-X-STREAM-INF/.test(text)) {
-      const child = text
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .find((line) => line && !line.startsWith('#'))
+      // A master playlist lists every rendition; the MSE players here have no
+      // ABR, so the single child playlist picked here is final — take the
+      // highest BANDWIDTH variant instead of the first one.
+      const lines = text.split(/\r?\n/).map((line) => line.trim())
+      let child
+      let best = -1
+      for (let i = 0; i < lines.length; i += 1) {
+        if (!lines[i].startsWith('#EXT-X-STREAM-INF')) continue
+        const bandwidth = Number(/(?:^|[,\s])BANDWIDTH=(\d+)/.exec(lines[i])?.[1] ?? 0)
+        const next = lines[i + 1]
+        if (next && !next.startsWith('#') && bandwidth > best) {
+          best = bandwidth
+          child = next
+        }
+      }
+      child ??= lines.find((line) => line && !line.startsWith('#'))
       if (child) {
         const childUrl = new URL(child, base).href
         ;({ text, type } = await fetchText(childUrl))
@@ -410,9 +396,9 @@ export function apply(ctx, config = {}) {
    * prefix route on the same Web server.
    */
   /**
-   * Serve one cover as JPEG. The CDN publishes HEIC, which Chromium cannot
-   * decode, so anything that is not already a browser format is converted once
-   * and cached on disk.
+   * Serve one cover as JPEG. The CDN only publishes HEIC, which Chromium
+   * cannot decode; macOS ships `sips` for the conversion, and the result is
+   * cached on disk so each poster is converted once.
    */
   async function serveCover(request, response, url) {
     const source = url.searchParams.get('u') ?? ''
@@ -428,14 +414,14 @@ export function apply(ctx, config = {}) {
     }
     const key = createHash('sha1').update(target.href).digest('hex')
     const cached = join(coverDir, `${key}.jpg`)
-    const sendImage = (bytes, mime = 'image/jpeg') => {
+    const sendJpeg = (bytes) => {
       response.statusCode = 200
-      response.setHeader('content-type', mime)
+      response.setHeader('content-type', 'image/jpeg')
       response.setHeader('cache-control', 'public, max-age=86400')
       response.end(request.method === 'HEAD' ? undefined : bytes)
     }
     try {
-      return sendImage(await readFile(cached))
+      return sendJpeg(await readFile(cached))
     } catch {
       // Not converted yet.
     }
@@ -452,16 +438,16 @@ export function apply(ctx, config = {}) {
     }
     const type = upstream.headers.get('content-type') ?? ''
     const bytes = Buffer.from(await upstream.arrayBuffer())
-    if (/^image\/(jpeg|png|webp|gif|avif)/.test(type)) return sendImage(bytes, type)
-    // HEIC goes through the platform converter (sips on macOS, ffmpeg elsewhere).
+    if (/^image\/(jpeg|png|webp|gif|avif)/.test(type)) return sendJpeg(bytes)
+    // HEIC and everything else local ImageIO understands goes through sips.
     const rawPath = join(coverDir, `${key}.heic`)
     const outPath = `${key}.jpg`
     try {
       await mkdir(coverDir, { recursive: true, mode: 0o700 })
       await writeFile(rawPath, bytes)
-      await convertCover(rawPath, join(coverDir, outPath))
+      await sips(['-s', 'format', 'jpeg', '-s', 'formatOptions', '70', '--resampleWidth', '240', rawPath, '--out', join(coverDir, outPath)])
       const converted = await readFile(cached)
-      return sendImage(converted)
+      return sendJpeg(converted)
     } catch (error) {
       logger.warn?.(`[hongguo] cover conversion failed: ${error?.message ?? error}`)
       response.statusCode = 415
@@ -537,6 +523,19 @@ export function apply(ctx, config = {}) {
     } catch (error) {
       if (error?.code !== 'ANONYMOUS_LIMITED' && seen.size === 0) throw error
     }
+    // A throttled device can come back empty-handed; reset it once and retry
+    // before falling back to the cover-less search rows.
+    if (seen.size === 0) {
+      try {
+        await sdk.resetDevice()
+        for await (const item of sdk.discoverAll({}, { maxPages: 6 })) {
+          mergeRows(seen, item)
+          if (seen.size >= 48) break
+        }
+      } catch (error) {
+        if (error?.code !== 'ANONYMOUS_LIMITED' && seen.size === 0) throw error
+      }
+    }
     for (const term of readConfig().searchTerms) {
       if (seen.size >= 24) break
       let page
@@ -553,9 +552,6 @@ export function apply(ctx, config = {}) {
     const featured = rows.filter((row) => row.cover).slice(0, 48)
     return featured.length >= 12 ? featured : rows.slice(0, 48)
   }
-
-  /** Posters looked up for search results, by series id. */
-  const searchCovers = new Map()
 
   /** Rebuild the cached list in the background. */
   let refreshing
@@ -720,46 +716,6 @@ export function apply(ctx, config = {}) {
       })
     }
 
-    // Real search on the service, not a filter over the cached list.
-    if (path === '/search') {
-      const keyword = (url.searchParams.get('q') ?? '').trim().slice(0, 40)
-      if (!keyword) return send(400, { ok: false, error: { message: 'empty query' } })
-      return json(async () => {
-        const sdk = await client()
-        let page
-        try {
-          page = await sdk.search(keyword, {})
-        } catch (error) {
-          if (error?.code !== 'ANONYMOUS_LIMITED') throw error
-          // The anonymous device ran out; a fresh one answers the same query.
-          await sdk.resetDevice()
-          page = await sdk.search(keyword, {})
-        }
-        const seen = new Map()
-        for (const item of page?.items ?? []) mergeRows(seen, item)
-        const rows = [...seen.values()]
-        // Search rows carry no poster; the cached list or the series detail does.
-        const known = new Map(games.map((row) => [row.id, row.cover]))
-        await Promise.all(
-          rows.map(async (row) => {
-            if (row.cover) return
-            row.cover = known.get(row.id) ?? searchCovers.get(row.id)
-            if (row.cover) return
-            try {
-              const detail = await sdk.getSeries(row.id)
-              if (detail?.cover_url) {
-                row.cover = detail.cover_url
-                searchCovers.set(row.id, detail.cover_url)
-              }
-            } catch {
-              // A drama without a poster still shows, with the placeholder.
-            }
-          }),
-        )
-        return { items: rows }
-      })
-    }
-
     if (path === '/series') {
       return json(async () => {
         const id = url.searchParams.get('id')
@@ -780,6 +736,18 @@ export function apply(ctx, config = {}) {
       })
     }
 
+    // Live upstream search: the client's search box calls this with a query;
+    // the pre-fetched feed stays the offline fallback.
+    if (path === '/search') {
+      return json(async () => {
+        const q = (url.searchParams.get('q') ?? '').trim()
+        if (!q) return { items: [] }
+        const sdk = await client()
+        const page = await sdk.search(q, {})
+        return { items: (page?.items ?? []).map(toRow).filter((row) => row?.id) }
+      })
+    }
+
     if (path === '/play') {
       return json(async () => {
         const episodeId = url.searchParams.get('episode')
@@ -789,7 +757,12 @@ export function apply(ctx, config = {}) {
         const playback = result.playback
         const streams = (playback.streams ?? []).filter((stream) => stream.url)
         const kindOf = (stream) => (stream.hls ? 'hls' : stream.dash ? 'dash' : 'file')
-        const pick = (kind) => streams.find((stream) => kindOf(stream) === kind)
+        // Upstream lists every rendition (360p…1080p); always prefer the
+        // highest definition within each kind instead of the first one.
+        const heightOf = (stream) => parseInt(String(stream.definition ?? ''), 10) || 0
+        const pick = (kind) => streams
+          .filter((stream) => kindOf(stream) === kind)
+          .sort((a, b) => heightOf(b) - heightOf(a))[0]
         const ordered = STREAM_PREFERENCE.map(pick).filter(Boolean)
         const chosen = ordered[0]
         if (!chosen) throw Object.assign(new Error('没有可用的清晰度'), { code: 'CONTENT_UNAVAILABLE' })
