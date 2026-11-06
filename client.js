@@ -11,6 +11,9 @@
 window.__ModuleLoader__.load({
   id: 'dsh-hongguo',
   factory(require) {
+    // Build marker — visible in DevTools console, proves which revision the
+    // page actually loaded (guards against stale cached module bundles).
+    console.log('[hongguo] client.js v2026-11-06.2 scrub-guard')
     const React = require('react')
     const h = React.createElement
     const API = '/api/hongguo'
