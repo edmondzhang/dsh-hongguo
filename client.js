@@ -531,6 +531,11 @@ window.__ModuleLoader__.load({
       // continuation (shown as a notice until the first seek settles).
       const resumeRef = React.useRef({ position: 0, resumed: false })
       const lastSavedRef = React.useRef(0)
+      // Track user scrubbing so timeupdate never fights the thumb: while the
+      // pointer is down (or within a short grace window after the last input
+      // event) progress readouts are suppressed entirely.
+      const lastInputRef = React.useRef(0)
+      const draggingRef = React.useRef(false)
 
       const loadFeed = React.useCallback(() => {
         setFeed((previous) => ({ ...previous, status: 'loading', error: undefined }))
@@ -1065,7 +1070,12 @@ window.__ModuleLoader__.load({
                   value: progress.time || 0,
                   style: { '--hg-fill': ratio + '%' },
                   'aria-label': 'seek',
+                  onPointerDown: () => { draggingRef.current = true },
+                  onPointerUp: () => { draggingRef.current = false },
+                  onPointerCancel: () => { draggingRef.current = false },
+                  onBlur: () => { draggingRef.current = false },
                   onChange: (event) => {
+                    lastInputRef.current = Date.now()
                     const value = Number(event.target.value)
                     seekTo(value)
                     // The input is controlled: without moving state here React
@@ -1114,7 +1124,7 @@ window.__ModuleLoader__.load({
                   // While a seek is in flight some engines still emit
                   // timeupdate with the pre-seek position; never let it
                   // yank the thumb away from where the user dragged.
-                  if (video.seeking) return
+                  if (draggingRef.current || video.seeking || Date.now() - lastInputRef.current < 300) return
                   setProgress({ time: video.currentTime, duration: video.duration })
                   // Persist about once per second, not on every tick.
                   if (current && Math.abs(video.currentTime - lastSavedRef.current) >= 1) {
